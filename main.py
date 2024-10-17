@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
-import pymongo
+from typing import List, Dict, Any
+from motor.motor_asyncio import AsyncIOMotorClient
+from bson import ObjectId
 
 app = FastAPI()
 
@@ -14,32 +15,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["Data"]
-farm_collection = db["CsSnI3"]
+client = AsyncIOMotorClient("mongodb+srv://ECD517:bing24@cluster0.6nj4o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db = client["ECD517"]
+collection = db["CsSnI3"] 
 
 class ElementResponse(BaseModel):
     element: str
-    formation_energy: float 
+    formation_energy: float
     charge_transition: float
+    id: str  # For the ObjectId field if you want to return it as a string
 
-@app.get("/farm-havers", response_model=List[ElementResponse])
-def get_farm_havers():
-    farms = farm_collection.find({}, {"_id": 0, "Element": 1, "formation energy (eV)": 1, "charge transition (+/0) (eV)": 1})  # Ensure you include formation energy
-    elements = [ElementResponse(element=farm["Element"], formation_energy=farm["formation energy (eV)"], charge_transition=farm["charge transition (+/0) (eV)"]) for farm in farms]
+    class Config:
+        # Allow the model to be serialized as dict with ObjectId as string
+        json_encoders = {
+            ObjectId: lambda v: str(v)  # Convert ObjectId to string
+        }
+
+@app.get("/get-dopant", response_model=List[ElementResponse])
+async def get_farm_havers():
+    # Fetch all documents asynchronously
+    farms = await collection.find().to_list(None)  # No projection, fetch all fields
+
+    # Convert each document to ElementResponse, including ObjectId as string
+    elements = [
+        ElementResponse(
+            element=farm["Element"], 
+            formation_energy=farm["formation energy (eV)"], 
+            charge_transition=farm["charge transition (+/0) (eV)"],
+            id=str(farm["_id"])  # Convert ObjectId to string
+        ) for farm in farms
+    ]
+    
     return elements
 
-
-@app.post("/select-farm-haver")
-def select_farm_haver(farm_haver: ElementResponse):
-    selected_farm = farm_collection.find_one({"Element": farm_haver.element}, {"_id": 0, "formation energy (eV)": 1})
-    print(selected_farm)
-    if selected_farm is None:
-        raise HTTPException(status_code=404, detail="Element not found tahalivaa")
-    
-    return {"message": f"You selected {farm_haver.element}", "formation_energy": selected_farm["/select-farm-haver"]}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+@app.get("/check-db")
+async def check_db_connection():
+    try:
+        # Test connection by listing collections
+        collections = await db.list_collection_names()
+        return {"status": "Success", "collections": collections}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
