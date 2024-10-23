@@ -15,6 +15,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# mongodb+srv://ECD517:<db_password>@cluster0.6nj4o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+
 client = AsyncIOMotorClient("mongodb+srv://ECD517:bing24@cluster0.6nj4o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["ECD517"]
 collection = db["CsSnI3"] 
