@@ -5,12 +5,13 @@ from pymatgen.core import Structure
 from motor.motor_asyncio import AsyncIOMotorClient
 import crystal_toolkit.components as ctc
 import dash_bootstrap_components as dbc
+from pymongo import MongoClient
 
 # Initialize Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], requests_pathname_prefix='/dash/')
 
 # MongoDB client setup
-client = AsyncIOMotorClient("mongodb+srv://ECD517:bing24@cluster0.6nj4o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb+srv://ECD517:bing24@cluster0.6nj4o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["vasp_data"]
 
 # Global variable to store selected element data
@@ -61,6 +62,7 @@ def render_structure(_):
     structure = Structure.from_dict(structure_data)
     structure_component = ctc.StructureMoleculeComponent(structure, id="my_structure")
     return structure_component.layout()
+
 
 # Register Crystal Toolkit
 ctc.register_crystal_toolkit(app=app, layout=app.layout)
