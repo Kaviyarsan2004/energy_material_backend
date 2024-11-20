@@ -77,3 +77,7 @@ ctc.register_crystal_toolkit(app=dash_app, layout=my_layout)
 )
 def update_structure(n_clicks):
     return structures[0]
+
+
+if __name__ == "__main__":
+    dash_app.run_server(port=8050, debug=True)
