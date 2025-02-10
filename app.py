@@ -3,6 +3,7 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 from pymongo import MongoClient
 from dash.dependencies import Input, Output
+import os
 
 # Connect to MongoDB
 
@@ -125,6 +126,7 @@ def update_tab_content(tab):
     
     return html.Div("Task content goes here")
 
-# Run Dash app
+
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
