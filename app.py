@@ -25,6 +25,7 @@ def fetch_charge_states():
 
 # Initialize Dash app with Material theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])  # Bright theme
+server = app.server
 
 # Custom Styles
 TAB_STYLE = {
