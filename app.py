@@ -5,6 +5,8 @@ from dash.dependencies import Input, Output, State
 from pymongo import MongoClient
 from pymatgen.core import Structure, Lattice
 import crystal_toolkit.components as ctc
+from crystal_toolkit.components.structure import StructureMoleculeComponent
+
 
 # Connect to MongoDB
 MONGO_URI = "mongodb+srv://ECD517:bing24@cluster0.6nj4o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -47,6 +49,9 @@ app.layout = dbc.Container([
     html.Div(id="tab-content", className="mt-4")
 ], fluid=True, style={"background-color": "#111", "min-height": "100vh", "padding": "20px"})
 
+# Store for the structure data
+app.layout.children.append(dcc.Store(id="structure-store"))
+
 # Callback for tab content
 @app.callback(
     Output("tab-content", "children"),
@@ -78,34 +83,36 @@ def update_tab_content(tab):
                     dbc.CardBody([
                         html.H2("Crystal Structures", className="text-white text-center"),
                         dbc.Row([
-                            dbc.Col(html.Div(id="structure-container-1", 
+                            dbc.Col(html.Div(id="structure-container-1",
                                              children=ctc.StructureMoleculeComponent(default_structure).layout())),
-                            dbc.Col(html.Div(id="structure-container-2", 
-                                             children=ctc.StructureMoleculeComponent(default_structure).layout()))
                         ])
                     ])
                 )
             ], width=8),
         ])
-    
+
     return html.Div("Task content goes here", className="text-white")
 
-# Callback to update both structures on button click
+
+# Callback to update structure in store and render it
+# Callback to update structure in store and render it
 @app.callback(
+    Output("structure-store", "data"),
     Output("structure-container-1", "children"),
-    Output("structure-container-2", "children"),
     Input("submit-btn", "n_clicks"),
     State("dopant-dropdown", "value"),
     prevent_initial_call=True
 )
-def update_structures(n_clicks, selected_dopant):
-    structure = get_structure(selected_dopant)
-    
-    # Create two StructureMoleculeComponent instances
-    structure_component_1 = ctc.StructureMoleculeComponent(structure)
-    structure_component_2 = ctc.StructureMoleculeComponent(structure)
-    
-    return structure_component_1.layout(), structure_component_2.layout()
+def update_structure(n_clicks, selected_dopant):
+    if selected_dopant:
+        structure = get_structure(selected_dopant)
+    else:
+        structure = default_structure
+
+    structure_component = ctc.StructureMoleculeComponent(structure)
+    return structure.as_dict(), structure_component.layout()  # Changed to .as_dict()
+
+
 
 # Register Crystal Toolkit
 ctc.register_crystal_toolkit(app=app, layout=app.layout)
